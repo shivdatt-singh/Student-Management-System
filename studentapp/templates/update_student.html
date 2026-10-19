@@ -6,6 +6,17 @@
 </head>
 <body>
     <h1>Update Student Details </h1>
+    
+{% if form.errors %}
+    <div style="color: red;">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+    </div>
+{% endif %}
+
     <form method="POST">
         {% csrf_token %}
         <lable>Name:</lable>

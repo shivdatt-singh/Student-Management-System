@@ -1,40 +1,59 @@
 
 from django.shortcuts import render , redirect
 from .models import Student
+from .forms import StudentForm
+from django.db.models import Q
 def delete_student(request, student_id):
     student = Student.objects.get(id=student_id)
     student.delete()
     return redirect('student_list')
 
-def update_student(request,student_id):
+
+def update_student(request, student_id):
     student = Student.objects.get(id=student_id)
-    
+    form = StudentForm(instance=student)
+
     if request.method == 'POST':
-        student.name = request.POST.get('name')
-        student.roll_number = request.POST.get('roll_number')
-        student.email = request.POST.get('email')
-        student.age = request.POST.get('age')
+        form = StudentForm(request.POST, instance=student)
 
-        student.save()
-        return redirect('student_list')
+        if form.is_valid():
+            form.save()
+            return redirect('student_list')
 
-    return render(request, 'update_student.html', {'student': student})
+    return render(request, 'update_student.html', {
+        'student': student,
+        'form': form
+    })
+
+
+
 
 
 def student_list(request):
+    form = StudentForm()
+
     if request.method == 'POST':
-        name = request.POST.get('name')
-        roll_number = request.POST.get('roll_number')
-        email = request.POST.get('email')
-        age = request.POST.get('age')
+        form = StudentForm(request.POST)
 
-        Student.objects.create(
-            name=name,
-            roll_number=roll_number,
-            email=email,
-            age=age
-        )
-        return redirect('student_list')
-
+        if form.is_valid():
+            form.save()
+            return redirect('student_list')
+    search_query = request.GET.get('search', '')
     students = Student.objects.all()
-    return render(request, 'student_list.html', {'students': students})
+    total_students = Student.objects.count()
+    if search_query:
+        if search_query.isdigit():
+            students = students.filter(
+                Q(name__icontains=search_query) |
+                Q(roll_number=int(search_query))
+            )
+        else:
+            students = students.filter(
+                name__icontains=search_query
+            )
+
+    return render(request, 'student_list.html', {
+        'students': students,
+        'form': form,
+        'total_students': total_students
+    })
